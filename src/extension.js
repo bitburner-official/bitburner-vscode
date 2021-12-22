@@ -108,16 +108,16 @@ function deactivate() {}
  */
 const initFileWatcher = (rootDir = `./`) => {
   const fullWatcherPathGlob = `${vscode.workspace.workspaceFolders
-    .map((folder) => folder.uri.path)
-    .join(`|`)}/${rootDir}/**/*.{script,js,ns}`.replace(/[\|/]+/g, `/`);
+    .map((folder) => folder.uri.fsPath.toString())
+    .join(`|`)}/${rootDir}/**/*.{script,js,ns}`.replace(/[\\|/]+/g, `/`);
 
   console.group({ fullWatcherPathGlob });
 
   fsWatcher = vscode.workspace.createFileSystemWatcher(fullWatcherPathGlob);
 
   fsWatcher.onDidChange(async (event) => {
-    const contents = fs.readFileSync(event.fsPath).toString();
-    const filename = stripWorkspaceFolderFromFileName(event.fsPath);
+    const contents = fs.readFileSync(event.fsPath.toString()).toString();
+    const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
 
     doPostRequestToBBGame({
       action: `UPDATE`,
@@ -127,8 +127,8 @@ const initFileWatcher = (rootDir = `./`) => {
   });
 
   fsWatcher.onDidCreate((event) => {
-    const contents = fs.readFileSync(event.fsPath).toString();
-    const filename = stripWorkspaceFolderFromFileName(event.fsPath);
+    const contents = fs.readFileSync(event.fsPath.toString()).toString();
+    const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
 
     doPostRequestToBBGame({
       action: `CREATE`,
@@ -139,7 +139,7 @@ const initFileWatcher = (rootDir = `./`) => {
 
   // TODO: Implement 'delete' endpoint in game
   // fsWatcher.onDidDelete((event) => {
-  //   const filename = stripWorkspaceFolderFromFileName(event.fsPath);
+  //   const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
   //   uploadFilePostRequest({
   //     action: `DELETE`,
   //     filename: filename,
@@ -149,7 +149,7 @@ const initFileWatcher = (rootDir = `./`) => {
   vscode.window.showInformationMessage(
     `File Watcher Enabled For \`.js\`, \`.ns\` and \`.script\` files within the ${vscode.workspace.workspaceFolders
       .map((ws) => `${ws.uri.fsPath}/${rootDir}/**`)
-      .join(`, `)} path(s).`.replace(/[\|/]+/g, `/`)
+      .join(`, `)} path(s).`.replace(/[\\|/]+/g, `/`)
   );
 };
 
@@ -160,15 +160,16 @@ const initFileWatcher = (rootDir = `./`) => {
  * the name and extension after the final `/` in the path.
  */
 const stripWorkspaceFolderFromFileName = (filePath) => {
-  const workspaceFolderPaths = vscode.workspace.workspaceFolders.map(
-    (wsf) => wsf.uri.fsPath
+  const workspaceFolderPaths = vscode.workspace.workspaceFolders.map((wsf) =>
+    wsf.uri.fsPath.toString()
   );
 
   for (const folderName of workspaceFolderPaths) {
     if (filePath.startsWith(folderName)) {
       return filePath
         .replace(folderName, ``)
-        .replace(sanitizedUserConfig.scriptRoot.replace(/\.*[\|/]+/g, `/`), "")
+        .replace(/\.*[\\|/]+/g, `/`)
+        .replace(sanitizedUserConfig.scriptRoot.replace(/\.*[\\|/]+/g, `/`), "")
         .replace(/ /g, `-`);
     }
   }
@@ -188,10 +189,17 @@ const getCurrentOpenDocURI = () =>
  * @param {{ action: `CREATE` | `UPDATE` | `UPSERT` | `DELETE`, filename: string, code?: string }} payload The payload to send to the game client
  */
 const doPostRequestToBBGame = (payload) => {
+
+  // If the file is going to be in a director, it NEEDS the leading `/`, i.e. `/my-dir/file.js`
+  // If the file is standalone, it CAN NOT HAVE a leading slash, i.e. `file.js`
+  // The game will not accept the file and/or have undefined behaviour otherwise...
   const cleanPayload = {
-    filename: `/${payload.filename.replace(/[\|/]+/, `/`)}`,
+    filename: `${payload.filename}`.replace(/[\\|/]+/g, `/`),
     code: payload.code.replaceAll(`\n`, `\\n`),
   };
+  if (/\//.test(cleanPayload.filename)) {
+    cleanPayload.filename = `/${cleanPayload.filename}`;
+  }
 
   const stringPayload = JSON.stringify(cleanPayload);
   const options = {
