@@ -1,0 +1,103 @@
+{
+  "name": "vscode-bitburner-connector",
+  "displayName": "Bitburner Connector",
+  "description": "Deploy your scripts (.ns, .js or .script extensions) directly in to the running Bitburner game from VSCode!",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "author": {
+    "name": "Hexnaught",
+    "url": "https://github.com/hexnaught/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hexnaught/vscode-bitburner-connector"
+  },
+  "bugs": {
+    "url": "https://github.com/hexnaught/vscode-bitburner-connector/issues"
+  },
+  "contributors": [
+    "Hexnaught <danj.parkes@gmail.com>"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ext.bitburner-connector.enableWatcher",
+        "title": "Bitburner: Enable File Watcher"
+      },
+      {
+        "command": "ext.bitburner-connector.disableWatcher",
+        "title": "Bitburner: Disable File Watcher"
+      },
+      {
+        "command": "ext.bitburner-connector.pushFile",
+        "title": "Bitburner: Push file to game"
+      },
+      {
+        "command": "ext.bitburner-connector.deleteFile",
+        "title": "Bitburner: Delete file from the game"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "ext.bitburner-connector.pushFile",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ext.bitburner-connector.deleteFile",
+		  "when": "editorTextFocus"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "ext.bitburner-connector.pushFile",
+          "group": "-1_bitburner-connector@1",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "ext.bitburner-connector.deleteFile",
+          "group": "-1_bitburner-connector@2",
+          "when": "editorTextFocus"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "Bitburner Game Details",
+        "properties": {
+          "bitburner.scriptRoot": {
+            "type": "string",
+            "default": ".\\",
+            "description": "The root directory of the scripts you want to push to the game. (Use with the File Watcher)"
+          }
+          },
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "yarn run lint",
+    "build:vsix": "npx vsce package"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.4",
+    "@types/node": "14.x",
+    "@types/vscode": "^1.60.0",
+    "@vscode/test-electron": "^1.6.2",
+    "eslint": "^8.1.0",
+    "glob": "^7.1.7",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  }
+}
