@@ -1,0 +1,44 @@
+on:
+  push:
+    branches:
+      - master
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Install dependencies
+        run: yarn
+      - name: Run Linting
+        run: yarn lint
+          
+  publish:
+    name: Release and publish
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Install dependencies
+        run: yarn install --production --frozen-lockfile
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+        run: npx semantic-release
+      - name: Vscode release plugin
+        uses: JCofman/vscodeaction@master
+        env:
+          PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
+        with:
+          args: publish -p $PUBLISHER_TOKEN
+
+
