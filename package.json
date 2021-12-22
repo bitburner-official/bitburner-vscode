@@ -81,7 +81,10 @@
             "default": "./",
             "description": "The root directory of the scripts you want to push to the game. (Use with the File Watcher)"
           }
-          },
+        }
+      }
+    ]
+  },
   "release": {
     "branches": "master",
     "verifyConditions": [
