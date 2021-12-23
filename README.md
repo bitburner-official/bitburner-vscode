@@ -18,16 +18,13 @@ _This is an early WIP with a few hours gone in to it at the moment across the ex
 
 This is currently disabled by default, the behaviour is - It will push all files that have a `.js`, `.ns` or `.script` extension within your currently open folder/workspace - Respecting any folders that you may have them in.
 
-**NOTE: You can only watch directories within the workspace VSCode has open.**
+You can change the directory being watching with the `bitburner.scriptRoot` settng within the plugin configuration, open VSCode preferences to modify the value - default as `./` (workspace root).
+
+**NOTE: You can only watch paths within the workspace VSCode has open.**
 
 ### Behaviour
 
-Pushing files will push them to the game, relative to your workspace root and the games 'Home' computer.
+Pushing files will push them to the game, relative to your workspace root (or configured `bitburner.scriptRoot` VSCode setting) and the games 'Home' computer.
 
 - `/script.js` will push to `~/script.js` in game.
 - `src/script.js` will push to `~/src/script.js` in game.
-
-## TODO:
-
-- CI/CD
-  - Probably use github actions to up semver, build the VSIX and generate a Github release and publish to VSCode Extension Marketplace.

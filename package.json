@@ -2,7 +2,7 @@
   "name": "vscode-bitburner-connector",
   "displayName": "Bitburner Connector",
   "description": "Deploy your scripts (.ns, .js or .script extensions) directly in to the running Bitburner game from VSCode!",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "hexnaught",
   "private": "true",
   "engines": {
