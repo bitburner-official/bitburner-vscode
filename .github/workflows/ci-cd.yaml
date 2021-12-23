@@ -17,7 +17,7 @@ jobs:
         run: yarn install
       - name: Run Linting
         run: yarn lint
-          
+
   publish:
     name: Release and publish
     runs-on: ubuntu-18.04
@@ -30,6 +30,8 @@ jobs:
           node-version: 16
       - name: Install dependencies
         run: yarn install --production --frozen-lockfile
+      - name: Build .vsix
+        run: yarn build:vsix
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
@@ -40,5 +42,3 @@ jobs:
           args: "publish -p $PUBLISHER_TOKEN"
         env:
           PUBLISHER_TOKEN: ${{ secrets.PUBLISHER_TOKEN }}
-
-
