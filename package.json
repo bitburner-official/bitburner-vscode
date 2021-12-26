@@ -85,6 +85,16 @@
             "type": "boolean",
             "default": false,
             "description": "Enable the file watcher by default. (This setting will not work if set in global (user) settings, it must be set at the workspace or folder level)"
+          },
+          "bitburner.showPushSuccessNotification": {
+            "type": "boolean",
+            "default": false,
+            "description": "Receive notifications whenever a file is pushed with its path and filename. Errors will always show a notification."
+          },
+          "bitburner.showFileWatcherEnabledNotification": {
+            "type": "boolean",
+            "default": false,
+            "description": "Receive notifications when the FileWatcher is enabled and the path it is watching. Errors will always show a notification."
           }
         }
       }

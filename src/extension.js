@@ -18,6 +18,10 @@ const BB_GAME_CONFIG = {
 let fsWatcher;
 let fwEnabled;
 
+// TODO: Refactor this user config to combined 'extension/user config' with better internal API/structure
+/**
+ * @type {{ scriptRoot: string, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean }}
+ */
 let sanitizedUserConfig;
 
 /**
@@ -31,7 +35,7 @@ function activate(context) {
 
   sanitizeUserConfig();
 
-  if(fwEnabled) {
+  if (fwEnabled) {
     initFileWatcher(sanitizedUserConfig.scriptRoot);
   }
 
@@ -61,7 +65,7 @@ function activate(context) {
         if (fsWatcher) {
           fsWatcher.dispose();
         }
-        vscode.window.showInformationMessage(`File Watcher Disabled`);
+        showToast(`File Watcher Disabled`);
       }
     )
   );
@@ -115,8 +119,6 @@ const initFileWatcher = (rootDir = `./`) => {
     .map((folder) => folder.uri.fsPath.toString())
     .join(`|`)}/${rootDir}/**/*.{script,js,ns}`.replace(/[\\|/]+/g, `/`);
 
-  console.group({ fullWatcherPathGlob });
-
   fsWatcher = vscode.workspace.createFileSystemWatcher(fullWatcherPathGlob);
 
   fsWatcher.onDidChange(async (event) => {
@@ -150,11 +152,15 @@ const initFileWatcher = (rootDir = `./`) => {
   //   });
   // });
 
-  vscode.window.showInformationMessage(
-    `File Watcher Enabled For \`.js\`, \`.ns\` and \`.script\` files within the ${vscode.workspace.workspaceFolders
-      .map((ws) => `${ws.uri.fsPath}/${rootDir}/**`)
-      .join(`, `)} path(s).`.replace(/[\\|/]+/g, `/`)
-  );
+  if (sanitizedUserConfig.showFileWatcherEnabledNotification) {
+    showToast(
+      `File Watcher Enabled For \`.js\`, \`.ns\` and \`.script\` files within the ${vscode.workspace.workspaceFolders
+        .map((ws) => `${ws.uri.fsPath}/${rootDir}/**`)
+        .join(`, `)} path(s).`.replace(/[\\|/]+/g, `/`),
+      `information`,
+      { forceShow: true }
+    );
+  }
 };
 
 /**
@@ -225,47 +231,90 @@ const doPostRequestToBBGame = (payload) => {
   });
 
   req.on("error", (err) => {
-    vscode.window.showErrorMessage(
-      `Failed to push ${cleanPayload.filename} to the game!\n${err}`
+    showToast(
+      `Failed to push ${cleanPayload.filename} to the game!\n${err}`,
+      `error`
     );
   });
 
   req.on("finish", () => {
-    vscode.window.showInformationMessage(
-      `${cleanPayload.filename} has been uploaded!`
-    );
+    showToast(`${cleanPayload.filename} has been uploaded!`);
   });
 
   req.write(stringPayload);
   req.end();
 };
 
-module.exports = {
-  activate,
-  deactivate,
-};
-
+// TODO: Overhaul internal user/extension config 'API'
 const sanitizeUserConfig = () => {
   const userConfig = vscode.workspace.getConfiguration(`bitburner`);
-  const fwInspect = vscode.workspace.getConfiguration('bitburner').inspect('fileWatcher.enable');
-  const fwVal = fwInspect.workspaceValue || fwInspect.workspaceFolderValue || fwInspect.defaultValue; // Only accepts values from workspace or folder level configs
+  const fwInspect = vscode.workspace
+    .getConfiguration("bitburner")
+    .inspect("fileWatcher.enable");
 
-  if(fwInspect.globalValue) {
-    vscode.window.showErrorMessage(
-      `Warning: You have enabled the bitburner filewatcher in your global (user) settings, the extension will default to workspace or folder settings instead.`
+  // Only accepts values from workspace or folder level configs
+  const fwVal =
+    fwInspect.workspaceValue ||
+    fwInspect.workspaceFolderValue ||
+    fwInspect.defaultValue;
+
+  if (fwInspect.globalValue) {
+    showToast(
+      `Warning: You have enabled the bitburner file watcher in your global (user) settings, the extension will default to workspace or folder settings instead.`,
+      `error`
     );
   }
 
   // Checks if initializing or user config changed for fileWatcher.enabled
-  if(sanitizedUserConfig === undefined || 
-     sanitizedUserConfig.fwEnabled !== fwVal) {
-      fwEnabled = fwVal;
+  if (!sanitizedUserConfig || sanitizedUserConfig.fwEnabled !== fwVal) {
+    fwEnabled = fwVal;
   }
 
   sanitizedUserConfig = {
     scriptRoot: `${userConfig.get(`scriptRoot`)}/`
       .replace(/^\./, ``)
       .replace(/\/*$/, `/`),
-    fwEnabled: fwVal
+    fwEnabled: fwVal,
+    showPushSuccessNotification: userConfig.get(`showPushSuccessNotification`),
+    showFileWatcherEnabledNotification: userConfig.get(
+      `showFileWatcherEnabledNotification`
+    ),
   };
+};
+
+// TODO: refine 'showToast' internal API
+const ToastTypes = Object.freeze({
+  information: vscode.window.showInformationMessage,
+  warning: vscode.window.showWarningMessage,
+  error: vscode.window.showErrorMessage,
+});
+
+/**
+ * Show a toast/notification to the user.
+ * @param {string} message The message to be in the toast
+ * @param {'information' | 'warning' | 'error'} toastType The type of toast we are wanting to issue, defaults to 'information' if not provided
+ * @param {{ forceShow: boolean }} opts Optional toast options
+ */
+const showToast = (
+  message,
+  toastType = `information`,
+  opts = { forceShow: false }
+) => {
+  if (!Object.keys(ToastTypes).includes(toastType)) {
+    return;
+  }
+  if (
+    !sanitizedUserConfig.showPushSuccessNotification &&
+    !opts.forceShow &&
+    toastType !== "error"
+  ) {
+    return;
+  }
+
+  ToastTypes[toastType](message);
+};
+
+module.exports = {
+  activate,
+  deactivate,
 };
