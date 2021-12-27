@@ -13,6 +13,13 @@
 		},
 		"sourceType": "module"
 	},
+	"extends": [
+		"prettier",
+		"plugin:prettier/recommended"
+	],
+	"plugins": [
+		"prettier"
+	],
 	"rules": {
 		"no-const-assign": "warn",
 		"no-this-before-super": "warn",
@@ -20,6 +27,12 @@
 		"no-unreachable": "warn",
 		"no-unused-vars": "warn",
 		"constructor-super": "warn",
-		"valid-typeof": "warn"
+		"valid-typeof": "warn",
+		"quotes": [
+			"error",
+			"backtick"
+		],
+		"prettier/prettier": "error",
+		"arrow-body-style": "warn"
 	}
 }

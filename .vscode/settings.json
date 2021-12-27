@@ -3,5 +3,13 @@
     "files.trimFinalNewlines": true,
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
-    "editor.trimAutoWhitespace": true
+    "editor.trimAutoWhitespace": true,
+    // Rule to match ESLint Wrap Length
+    "editor.rulers": [
+        120
+    ],
+    // ESLint rule to auto-fix quotes
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true,
+    },
 }

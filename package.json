@@ -101,7 +101,8 @@
     ]
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "pretest": "yarn run lint",
     "build:vsix": "npx vsce package",
     "semantic-release": "semantic-release"
@@ -114,9 +115,11 @@
     "@types/vscode": "^1.60.0",
     "@vscode/test-electron": "^1.6.2",
     "eslint": "^8.1.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
     "glob": "^7.1.7",
+    "prettier": "^2.5.1",
     "semantic-release": "^18.0.1",
     "typescript": "^4.4.4"
-  },
-  "dependencies": {}
+  }
 }

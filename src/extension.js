@@ -1,8 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-const vscode = require("vscode");
-const fs = require("fs");
-const http = require("http");
+const vscode = require(`vscode`);
+const fs = require(`fs`);
+const http = require(`http`);
 
 // TODO: Move to extension config? Does this _need_ to be configurable?
 const BB_GAME_CONFIG = {
@@ -48,30 +48,24 @@ function activate(context) {
   });
 
   disposableCommands.push(
-    vscode.commands.registerCommand(
-      "ext.bitburner-connector.enableWatcher",
-      () => {
-        fwEnabled = true;
-        initFileWatcher(sanitizedUserConfig.scriptRoot);
-      }
-    )
+    vscode.commands.registerCommand(`ext.bitburner-connector.enableWatcher`, () => {
+      fwEnabled = true;
+      initFileWatcher(sanitizedUserConfig.scriptRoot);
+    }),
   );
 
   disposableCommands.push(
-    vscode.commands.registerCommand(
-      "ext.bitburner-connector.disableWatcher",
-      () => {
-        fwEnabled = false;
-        if (fsWatcher) {
-          fsWatcher.dispose();
-        }
-        showToast(`File Watcher Disabled`);
+    vscode.commands.registerCommand(`ext.bitburner-connector.disableWatcher`, () => {
+      fwEnabled = false;
+      if (fsWatcher) {
+        fsWatcher.dispose();
       }
-    )
+      showToast(`File Watcher Disabled`);
+    }),
   );
 
   disposableCommands.push(
-    vscode.commands.registerCommand("ext.bitburner-connector.pushFile", () => {
+    vscode.commands.registerCommand(`ext.bitburner-connector.pushFile`, () => {
       vscode.window.activeTextEditor.document.save().then(() => {
         const currentOpenFileURI = getCurrentOpenDocURI();
 
@@ -84,26 +78,17 @@ function activate(context) {
           code: contents,
         });
       });
-    })
+    }),
   );
 
   // TODO: Not yet implemented delete within the game...
   disposableCommands.push(
-    vscode.commands.registerCommand(
-      "ext.bitburner-connector.deleteFile",
-      () => {
-        vscode.window.showInformationMessage(
-          `Deleting files is not yet implemented...`
-        );
-      }
-    )
+    vscode.commands.registerCommand(`ext.bitburner-connector.deleteFile`, () => {
+      vscode.window.showInformationMessage(`Deleting files is not yet implemented...`);
+    }),
   );
 
-  context.subscriptions.push(
-    ...disposableCommands,
-    fsWatcher,
-    configChangeListener
-  );
+  context.subscriptions.push(...disposableCommands, fsWatcher, configChangeListener);
 }
 
 // this method is called when your extension is deactivated
@@ -158,7 +143,7 @@ const initFileWatcher = (rootDir = `./`) => {
         .map((ws) => `${ws.uri.fsPath}/${rootDir}/**`)
         .join(`, `)} path(s).`.replace(/[\\|/]+/g, `/`),
       `information`,
-      { forceShow: true }
+      { forceShow: true },
     );
   }
 };
@@ -170,29 +155,26 @@ const initFileWatcher = (rootDir = `./`) => {
  * the name and extension after the final `/` in the path.
  */
 const stripWorkspaceFolderFromFileName = (filePath) => {
-  const workspaceFolderPaths = vscode.workspace.workspaceFolders.map((wsf) =>
-    wsf.uri.fsPath.toString()
-  );
+  const workspaceFolderPaths = vscode.workspace.workspaceFolders.map((wsf) => wsf.uri.fsPath.toString());
 
   for (const folderName of workspaceFolderPaths) {
     if (filePath.startsWith(folderName)) {
       return filePath
         .replace(folderName, ``)
         .replace(/\.*[\\|/]+/g, `/`)
-        .replace(sanitizedUserConfig.scriptRoot.replace(/\.*[\\|/]+/g, `/`), "")
+        .replace(sanitizedUserConfig.scriptRoot.replace(/\.*[\\|/]+/g, `/`), ``)
         .replace(/ /g, `-`);
     }
   }
   // If it cant strip the workspace path to keep 'folder' structure, fallback to just the filename.ext
-  return filePath.split("/").pop().replace(/ +/g, `-`);
+  return filePath.split(`/`).pop().replace(/ +/g, `-`);
 };
 
 /**
  * Get the URI of the currently opened file
  * @returns The file path of the currently open file
  */
-const getCurrentOpenDocURI = () =>
-  vscode.window.activeTextEditor.document.uri.fsPath.toString();
+const getCurrentOpenDocURI = () => vscode.window.activeTextEditor.document.uri.fsPath.toString();
 
 /**
  * Make a POST request to the expected port of the game
@@ -215,9 +197,9 @@ const doPostRequestToBBGame = (payload) => {
     hostname: BB_GAME_CONFIG.url,
     port: BB_GAME_CONFIG.port,
     path: BB_GAME_CONFIG.filePostURI,
-    method: "POST",
+    method: `POST`,
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": `application/json`,
       "Content-Length": stringPayload.length,
     },
   };
@@ -225,19 +207,16 @@ const doPostRequestToBBGame = (payload) => {
   const req = http.request(options, (res) => {
     console.log(`statusCode: ${res.statusCode}`);
 
-    res.on("data", (d) => {
+    res.on(`data`, (d) => {
       process.stdout.write(d);
     });
   });
 
-  req.on("error", (err) => {
-    showToast(
-      `Failed to push ${cleanPayload.filename} to the game!\n${err}`,
-      `error`
-    );
+  req.on(`error`, (err) => {
+    showToast(`Failed to push ${cleanPayload.filename} to the game!\n${err}`, `error`);
   });
 
-  req.on("finish", () => {
+  req.on(`finish`, () => {
     showToast(`${cleanPayload.filename} has been uploaded!`);
   });
 
@@ -248,20 +227,15 @@ const doPostRequestToBBGame = (payload) => {
 // TODO: Overhaul internal user/extension config 'API'
 const sanitizeUserConfig = () => {
   const userConfig = vscode.workspace.getConfiguration(`bitburner`);
-  const fwInspect = vscode.workspace
-    .getConfiguration("bitburner")
-    .inspect("fileWatcher.enable");
+  const fwInspect = vscode.workspace.getConfiguration(`bitburner`).inspect(`fileWatcher.enable`);
 
   // Only accepts values from workspace or folder level configs
-  const fwVal =
-    fwInspect.workspaceValue ||
-    fwInspect.workspaceFolderValue ||
-    fwInspect.defaultValue;
+  const fwVal = fwInspect.workspaceValue || fwInspect.workspaceFolderValue || fwInspect.defaultValue;
 
   if (fwInspect.globalValue) {
     showToast(
       `Warning: You have enabled the bitburner file watcher in your global (user) settings, the extension will default to workspace or folder settings instead.`,
-      `error`
+      `error`,
     );
   }
 
@@ -271,14 +245,10 @@ const sanitizeUserConfig = () => {
   }
 
   sanitizedUserConfig = {
-    scriptRoot: `${userConfig.get(`scriptRoot`)}/`
-      .replace(/^\./, ``)
-      .replace(/\/*$/, `/`),
+    scriptRoot: `${userConfig.get(`scriptRoot`)}/`.replace(/^\./, ``).replace(/\/*$/, `/`),
     fwEnabled: fwVal,
     showPushSuccessNotification: userConfig.get(`showPushSuccessNotification`),
-    showFileWatcherEnabledNotification: userConfig.get(
-      `showFileWatcherEnabledNotification`
-    ),
+    showFileWatcherEnabledNotification: userConfig.get(`showFileWatcherEnabledNotification`),
   };
 };
 
@@ -295,19 +265,11 @@ const ToastTypes = Object.freeze({
  * @param {'information' | 'warning' | 'error'} toastType The type of toast we are wanting to issue, defaults to 'information' if not provided
  * @param {{ forceShow: boolean }} opts Optional toast options
  */
-const showToast = (
-  message,
-  toastType = `information`,
-  opts = { forceShow: false }
-) => {
+const showToast = (message, toastType = `information`, opts = { forceShow: false }) => {
   if (!Object.keys(ToastTypes).includes(toastType)) {
     return;
   }
-  if (
-    !sanitizedUserConfig.showPushSuccessNotification &&
-    !opts.forceShow &&
-    toastType !== "error"
-  ) {
+  if (!sanitizedUserConfig.showPushSuccessNotification && !opts.forceShow && toastType !== `error`) {
     return;
   }
 
