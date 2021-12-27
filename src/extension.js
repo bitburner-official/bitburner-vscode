@@ -3,6 +3,7 @@
 const vscode = require(`vscode`);
 const fs = require(`fs`);
 const http = require(`http`);
+const { getFilesRecursively } = require(`./utils/fs`);
 
 // TODO: Move to extension config? Does this _need_ to be configurable?
 const BB_GAME_CONFIG = {
@@ -10,6 +11,7 @@ const BB_GAME_CONFIG = {
   schema: `http`,
   url: `localhost`,
   filePostURI: `/`,
+  validFileExtensions: [`.js`, `.script`, `.ns`, `.txt`],
 };
 
 /**
@@ -69,6 +71,16 @@ function activate(context) {
       vscode.window.activeTextEditor.document.save().then(() => {
         const currentOpenFileURI = getCurrentOpenDocURI();
 
+        if (!isValidGameFile(currentOpenFileURI)) {
+          showToast(
+            `Can only push a file that is one of the following file types: ${BB_GAME_CONFIG.validFileExtensions.join(
+              `, `,
+            )}`,
+            `error`,
+          );
+          return;
+        }
+
         const contents = fs.readFileSync(currentOpenFileURI).toString();
         const filename = stripWorkspaceFolderFromFileName(currentOpenFileURI);
 
@@ -77,6 +89,35 @@ function activate(context) {
           filename: filename,
           code: contents,
         });
+      });
+    }),
+  );
+
+  disposableCommands.push(
+    vscode.commands.registerCommand(`ext.bitburner-connector.pushAllFiles`, () => {
+      vscode.window.activeTextEditor.document.save().then(() => {
+        const filesURIs = vscode.workspace.workspaceFolders
+          .flatMap((wsf) => getFilesRecursively(`${wsf.uri.fsPath.toString()}/${sanitizedUserConfig.scriptRoot}`))
+          .filter(isValidGameFile);
+
+        console.log(filesURIs);
+
+        const fileToContentMap = filesURIs.reduce((fileMap, fileURI) => {
+          const contents = fs.readFileSync(fileURI).toString();
+          const filename = stripWorkspaceFolderFromFileName(fileURI.toString());
+          fileMap.set(filename, contents);
+          return fileMap;
+        }, new Map());
+
+        // TODO: Handle 'success toast' better for 'batch' upload
+        // Currently, if notifications are enabled, does a toast per file within doPostRequestToBBGame
+        for (const [filename, contents] of fileToContentMap.entries()) {
+          doPostRequestToBBGame({
+            action: `UPSERT`,
+            filename: filename,
+            code: contents,
+          });
+        }
       });
     }),
   );
@@ -102,7 +143,9 @@ function deactivate() {}
 const initFileWatcher = (rootDir = `./`) => {
   const fullWatcherPathGlob = `${vscode.workspace.workspaceFolders
     .map((folder) => folder.uri.fsPath.toString())
-    .join(`|`)}/${rootDir}/**/*.{script,js,ns}`.replace(/[\\|/]+/g, `/`);
+    .join(`|`)}/${rootDir}/**/*{${BB_GAME_CONFIG.validFileExtensions.join(`,`)}}`.replace(/[\\|/]+/g, `/`);
+
+  console.log(fullWatcherPathGlob);
 
   fsWatcher = vscode.workspace.createFileSystemWatcher(fullWatcherPathGlob);
 
@@ -139,7 +182,9 @@ const initFileWatcher = (rootDir = `./`) => {
 
   if (sanitizedUserConfig.showFileWatcherEnabledNotification) {
     showToast(
-      `File Watcher Enabled For \`.js\`, \`.ns\` and \`.script\` files within the ${vscode.workspace.workspaceFolders
+      `File Watcher Enabled For \`${BB_GAME_CONFIG.validFileExtensions.join(
+        `\`, \``,
+      )}\` files within the ${vscode.workspace.workspaceFolders
         .map((ws) => `${ws.uri.fsPath}/${rootDir}/**`)
         .join(`, `)} path(s).`.replace(/[\\|/]+/g, `/`),
       `information`,
@@ -275,6 +320,8 @@ const showToast = (message, toastType = `information`, opts = { forceShow: false
 
   ToastTypes[toastType](message);
 };
+
+const isValidGameFile = (fileURI) => BB_GAME_CONFIG.validFileExtensions.some((ext) => fileURI.endsWith(ext));
 
 module.exports = {
   activate,

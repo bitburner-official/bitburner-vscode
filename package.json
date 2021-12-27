@@ -41,22 +41,29 @@
       },
       {
         "command": "ext.bitburner-connector.pushFile",
-        "title": "Bitburner: Push file to game"
+        "title": "Bitburner: Push File To The Game"
+      },
+      {
+        "command": "ext.bitburner-connector.pushAllFiles",
+        "title": "Bitburner: Push All Files To The Game"
       },
       {
         "command": "ext.bitburner-connector.deleteFile",
-        "title": "Bitburner: Delete file from the game"
+        "title": "Bitburner: Delete File From The Game"
       }
     ],
     "menus": {
       "commandPalette": [
         {
           "command": "ext.bitburner-connector.pushFile",
-          "when": "editorTextFocus"
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "ext.bitburner-connector.pushAllFiles"
         },
         {
           "command": "ext.bitburner-connector.deleteFile",
-          "when": "editorTextFocus"
+          "when": "editorIsOpen"
         }
       ],
       "editor/context": [
