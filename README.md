@@ -19,6 +19,12 @@ _This is an early WIP with a few hours gone in to it at the moment across the ex
 
 - Right Click in the VSCode Editor (Your source code) and choose 'Bitburner: Push file to game'
 
+### Through the command palette
+
+- Open the Command Palette (CTRL/CMD + SHIFT + P)
+  - Choose 'Bitburner: Push File To The Game' to save and push a single file (File open in editor)
+  - Choose 'Bitburner: Push All Files To The Game' to push all files from your configured `scriptRoot`.
+
 ### With the file watcher (Disabled by default)
 
 - Open the Command Palette (CTRL/CMD + SHIFT + P)
@@ -43,3 +49,16 @@ _With the the following configuration `scriptRoot: "./out/"`..._
 - `./out/folder/script.js` will push to `Home:~/folder/script.js` in game.
 - `./out/folder/subfolder/script.js` will push to `Home:~/folder/subfolder/script.js` in game.
 - `./test.js` will not be pushed to the game as it is a level above the configured 'script root'.
+
+## Bitburner
+
+> Bitburner is a programming-based incremental game. Write scripts in JavaScript to automate gameplay, learn skills, play minigames, solve puzzles, and more in this cyberpunk text-based incremental RPG.
+
+### Relevant Links
+
+The game can be played via Steam or via the Web with any browser that supports and has Javascript enabled. The discord is the place to go for information, help, to raise bugs or talk/help contribute features to the game!
+
+- [Steam Page](https://store.steampowered.com/app/1812820/Bitburner/)
+- [Web Version](https://danielyxie.github.io/bitburner/)
+- [Game Discord](https://discord.gg/TFc3hKD)
+- [Github](https://github.com/danielyxie/bitburner/)
