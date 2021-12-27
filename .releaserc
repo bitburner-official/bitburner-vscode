@@ -1,5 +1,12 @@
 {
-  "branches": "master",
+  "branches": [
+    "master",
+    {
+      "name": "develop",
+      "channel": "dev",
+      "prerelease": true
+    }
+  ],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
@@ -14,8 +21,21 @@
       "@semantic-release/github",
       {
         "assets": [
-          "vscode-bitburner-connector-*.vsix"
+          {
+            "path": "vscode-bitburner-connector-*.vsix",
+            "name": "vscode-bitburner-connector-${nextRelease.version}.vsix"
+          }
         ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "package.json"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ]
   ]
