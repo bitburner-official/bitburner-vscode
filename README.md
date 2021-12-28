@@ -2,7 +2,9 @@
 
 This extension allows for you to have all of your scripts on your host machine and push them to the running game client!
 
-_This is an early WIP with a few hours gone in to it at the moment across the extension and the game support! Use at your own risk! Remember to backup your save and scripts!_
+_**Note: The extension currently works with the 'dev' branch of the game. (as of 28th December 2021)**_
+
+_This is an early WIP with a few hours gone in to both the extension and the game functionality, a lot is subject to change. Use at your own risk! Remember to backup your save and scripts!_
 
 ## Extension Configuration
 
