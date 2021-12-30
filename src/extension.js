@@ -22,7 +22,7 @@ let fwEnabled;
 
 // TODO: Refactor this user config to combined 'extension/user config' with better internal API/structure
 /**
- * @type {{ scriptRoot: string, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean }}
+ * @type {{ scriptRoot: string, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean, authToken: string }}
  */
 let sanitizedUserConfig;
 
@@ -50,7 +50,33 @@ function activate(context) {
   });
 
   disposableCommands.push(
+    vscode.commands.registerCommand(`ext.bitburner-connector.addAuthToken`, () => {
+      vscode.window
+        .showInputBox({
+          ignoreFocusOut: true,
+          password: true,
+          placeHolder: `Bitburner Auth Token`,
+          title: `Bitburner Auth Token:`,
+          prompt: `Please enter the Bitburner Auth Token, for more information, see 'README #authentication'.`,
+        })
+        .then((authToken) => {
+          vscode.workspace
+            .getConfiguration(`bitburner`)
+            .update(`authToken`, authToken)
+            .then(() => {
+              showToast(`Bitburner Auth Token Added!`);
+            });
+        });
+    }),
+  );
+
+  disposableCommands.push(
     vscode.commands.registerCommand(`ext.bitburner-connector.enableWatcher`, () => {
+      if (!isAuthTokenSet()) {
+        showAuthError();
+        return;
+      }
+
       fwEnabled = true;
       initFileWatcher(sanitizedUserConfig.scriptRoot);
     }),
@@ -69,6 +95,11 @@ function activate(context) {
   disposableCommands.push(
     vscode.commands.registerCommand(`ext.bitburner-connector.pushFile`, () => {
       vscode.window.activeTextEditor.document.save().then(() => {
+        if (!isAuthTokenSet()) {
+          showAuthError();
+          return;
+        }
+
         const currentOpenFileURI = getCurrentOpenDocURI();
 
         if (!isValidGameFile(currentOpenFileURI)) {
@@ -95,12 +126,15 @@ function activate(context) {
 
   disposableCommands.push(
     vscode.commands.registerCommand(`ext.bitburner-connector.pushAllFiles`, () => {
-      vscode.window.activeTextEditor.document.save().then(() => {
+      vscode.workspace.saveAll(false).then(() => {
+        if (!isAuthTokenSet()) {
+          showAuthError();
+          return;
+        }
+
         const filesURIs = vscode.workspace.workspaceFolders
           .flatMap((wsf) => getFilesRecursively(`${wsf.uri.fsPath.toString()}/${sanitizedUserConfig.scriptRoot}`))
           .filter(isValidGameFile);
-
-        console.log(filesURIs);
 
         const fileToContentMap = filesURIs.reduce((fileMap, fileURI) => {
           const contents = fs.readFileSync(fileURI).toString();
@@ -144,8 +178,6 @@ const initFileWatcher = (rootDir = `./`) => {
   const fullWatcherPathGlob = `${vscode.workspace.workspaceFolders
     .map((folder) => folder.uri.fsPath.toString())
     .join(`|`)}/${rootDir}/**/*{${BB_GAME_CONFIG.validFileExtensions.join(`,`)}}`.replace(/[\\|/]+/g, `/`);
-
-  console.log(fullWatcherPathGlob);
 
   fsWatcher = vscode.workspace.createFileSystemWatcher(fullWatcherPathGlob);
 
@@ -246,12 +278,11 @@ const doPostRequestToBBGame = (payload) => {
     headers: {
       "Content-Type": `application/json`,
       "Content-Length": stringPayload.length,
+      Authorization: `Bearer ${sanitizedUserConfig.authToken}`,
     },
   };
 
   const req = http.request(options, (res) => {
-    console.log(`statusCode: ${res.statusCode}`);
-
     res.on(`data`, (d) => {
       process.stdout.write(d);
     });
@@ -285,7 +316,7 @@ const sanitizeUserConfig = () => {
   }
 
   // Checks if initializing or user config changed for fileWatcher.enabled
-  if (!sanitizedUserConfig || sanitizedUserConfig.fwEnabled !== fwVal) {
+  if (!sanitizedUserConfig || !userConfig.get(`authToken`) || sanitizedUserConfig.fwEnabled !== fwVal) {
     fwEnabled = fwVal;
   }
 
@@ -294,6 +325,10 @@ const sanitizeUserConfig = () => {
     fwEnabled: fwVal,
     showPushSuccessNotification: userConfig.get(`showPushSuccessNotification`),
     showFileWatcherEnabledNotification: userConfig.get(`showFileWatcherEnabledNotification`),
+    authToken: userConfig
+      .get(`authToken`)
+      .replace(/^bearer/i, ``)
+      .trim(),
   };
 };
 
@@ -322,6 +357,14 @@ const showToast = (message, toastType = `information`, opts = { forceShow: false
 };
 
 const isValidGameFile = (fileURI) => BB_GAME_CONFIG.validFileExtensions.some((ext) => fileURI.endsWith(ext));
+
+const isAuthTokenSet = () => Boolean(sanitizedUserConfig.authToken);
+const showAuthError = () => {
+  showToast(
+    `No Bitburner Auth Token is set. Please see the 'Authorization' section of the extensions README.md for more information.`,
+    `error`,
+  );
+};
 
 module.exports = {
   activate,

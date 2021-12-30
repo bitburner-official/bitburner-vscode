@@ -31,8 +31,6 @@ jobs:
           node-version: 16
       - name: Install dependencies
         run: yarn install
-      - name: Build .vsix
-        run: yarn build:vsix
       - name: Github Release
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
