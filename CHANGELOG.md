@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/hexnaught/vscode-bitburner-connector/compare/v1.2.1...v1.3.0) (2021-12-30)
+
+
+### Features
+
+* **auth:** Add requirement for auth token ([#4](https://github.com/hexnaught/vscode-bitburner-connector/issues/4)) ([b2d40a1](https://github.com/hexnaught/vscode-bitburner-connector/commit/b2d40a19de837a83cfa788cb815c974c2ca87b55)), closes [danielyxie/bitburner#2218](https://github.com/danielyxie/bitburner/issues/2218)
+
 ## [1.2.1](https://github.com/hexnaught/vscode-bitburner-connector/compare/v1.2.0...v1.2.1) (2021-12-28)
 
 
