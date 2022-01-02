@@ -1,3 +1,10 @@
+# [1.3.0-develop.3](https://github.com/hexnaught/vscode-bitburner-connector/compare/v1.3.0-develop.2...v1.3.0-develop.3) (2022-01-02)
+
+
+### Bug Fixes
+
+* **cicd:** split github release and marketplace release workflow ([6264ff0](https://github.com/hexnaught/vscode-bitburner-connector/commit/6264ff094b2bdc201e3b49fa95499bf4126989d2))
+
 # [1.3.0-develop.2](https://github.com/hexnaught/vscode-bitburner-connector/compare/v1.3.0-develop.1...v1.3.0-develop.2) (2022-01-02)
 
 
