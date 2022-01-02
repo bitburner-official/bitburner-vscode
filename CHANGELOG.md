@@ -1,3 +1,10 @@
+# [1.3.0-develop.2](https://github.com/hexnaught/vscode-bitburner-connector/compare/v1.3.0-develop.1...v1.3.0-develop.2) (2022-01-02)
+
+
+### Bug Fixes
+
+* **error-feedback:** better error feedback after trying to push ([6ad8dea](https://github.com/hexnaught/vscode-bitburner-connector/commit/6ad8deaae764c84fe1e4de71c140aa6ffebdb1aa))
+
 # [1.3.0-develop.1](https://github.com/hexnaught/vscode-bitburner-connector/compare/v1.2.1-develop.1...v1.3.0-develop.1) (2021-12-30)
 
 
