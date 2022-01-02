@@ -284,16 +284,20 @@ const doPostRequestToBBGame = (payload) => {
 
   const req = http.request(options, (res) => {
     res.on(`data`, (d) => {
-      process.stdout.write(d);
+      const responseBody = Buffer.from(d).toString();
+
+      switch (res.statusCode) {
+        case 200:
+          showToast(`${cleanPayload.filename} has been uploaded!`);
+          break;
+        case 401:
+          showToast(`Failed to push ${cleanPayload.filename} to the game!\n${responseBody}`, `error`);
+          break;
+        default:
+          showToast(`File failed to push, statusCode: ${res.statusCode} | message: ${responseBody}`, `error`);
+          break;
+      }
     });
-  });
-
-  req.on(`error`, (err) => {
-    showToast(`Failed to push ${cleanPayload.filename} to the game!\n${err}`, `error`);
-  });
-
-  req.on(`finish`, () => {
-    showToast(`${cleanPayload.filename} has been uploaded!`);
   });
 
   req.write(stringPayload);

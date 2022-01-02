@@ -46,6 +46,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 16
+      - name: Install dependencies
+        run: yarn install
       - name: Publish to VSCode Extension Marketplace
         uses: lannonbr/vsce-action@3.0.0
         with:
