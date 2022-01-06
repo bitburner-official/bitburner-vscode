@@ -258,11 +258,11 @@ const getCurrentOpenDocURI = () => vscode.window.activeTextEditor.document.uri.f
  * @param {{ action: `CREATE` | `UPDATE` | `UPSERT` | `DELETE`, filename: string, code?: string }} payload The payload to send to the game client
  */
 const doPostRequestToBBGame = (payload) => {
-  // If the file is going to be in a director, it NEEDS the leading `/`, i.e. `/my-dir/file.js`
+  // If the file is going to be in a directory, it NEEDS the leading `/`, i.e. `/my-dir/file.js`
   // If the file is standalone, it CAN NOT HAVE a leading slash, i.e. `file.js`
   // The game will not accept the file and/or have undefined behaviour otherwise...
   const cleanPayload = {
-    filename: `${payload.filename}`.replace(/[\\|/]+/g, `/`),
+    filename: `${payload.filename}`.replace(/[\\|/]+/g, `/`).replace(/^\/+/,`/`),
     code: Buffer.from(payload.code).toString(`base64`),
   };
   if (/\//.test(cleanPayload.filename)) {
