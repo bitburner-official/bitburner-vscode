@@ -312,13 +312,6 @@ const sanitizeUserConfig = () => {
   // Only accepts values from workspace or folder level configs
   const fwVal = fwInspect.workspaceValue || fwInspect.workspaceFolderValue || fwInspect.defaultValue;
 
-  if (fwInspect.globalValue) {
-    showToast(
-      `Warning: You have enabled the bitburner file watcher in your global (user) settings, the extension will default to workspace or folder settings instead.`,
-      `error`,
-    );
-  }
-
   // Checks if initializing or user config changed for fileWatcher.enabled
   if (!sanitizedUserConfig || !userConfig.get(`authToken`) || sanitizedUserConfig.fwEnabled !== fwVal) {
     fwEnabled = fwVal;
@@ -334,6 +327,13 @@ const sanitizeUserConfig = () => {
       .replace(/^bearer/i, ``)
       .trim(),
   };
+
+  if (fwInspect.globalValue) {
+    showToast(
+      `Warning: You have enabled the bitburner file watcher in your global (user) settings, the extension will default to workspace or folder settings instead.`,
+      `error`,
+    );
+  }
 };
 
 // TODO: refine 'showToast' internal API
