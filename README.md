@@ -32,6 +32,15 @@ You can copy the token from the Bitburner application 'API Server' context menu:
 
 ![Image showing API Server context menu in the bitburner game client](https://raw.githubusercontent.com/hexnaught/vscode-bitburner-connector/assets/images/bit-burner-menu-auth-token.png)
 
+## Start the API-Server
+
+You need to start the API-Server from Bitburner application 'API Server' context menu.
+Click on "Enable Server" to activate the API-Server.
+
+Note: If you start the game again then you have to start the API-Server again.
+
+You can also activate the Autostart via "Enable Autostart" in the 'API Server' context menu. Then the API-Server is automatically started with the game every time.
+
 #### Adding the token to the extension:
 
 The token will ultimately end up in the workspace configuration (See your workspaces`./.vscode/settings.json`), so you can either:
