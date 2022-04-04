@@ -222,7 +222,7 @@ const initFileWatcher = (rootDir = `./`) => {
     });
   });
 
-  // TODO: Implement 'delete' endpoint in game
+  // TODO: Fix repeated firing for the same deleted file.
   fsWatcher.onDidDelete((event) => {
     const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
     doDeleteRequestToBBGame(filename);
@@ -289,6 +289,7 @@ const getPrepareFileName = (filename) => {
 };
 
 /**
+ * Builds option Object to for request to the api server.
  * @param {string} method
  * @param {string} stringPayload
  * @returns {object} options for a request.
@@ -316,26 +317,34 @@ const doDeleteRequestToBBGame = (filename) => {
   const options = buildOptions(stringPayload, `DELETE`);
 
   const req = http.request(options, (res) => {
-    // If the request for delete is not accepted by server
-    // then it will respond with the following body
-    // { "success": false, "msg": "No such file exists" }
-    // If the request is successful then the body looks like
-    // this { "success": true }
-    // So using response.on('msg') will not work so well.
-    // because it is not always there.
-    switch (res.statusCode) {
-      case 200:
-        showToast(`${filename} has been deleted !`);
-        break;
-      default:
-        showToast(
-          `Failed to delete ${filename} in the game ! \n` +
-            `The file may not exit in the game.\n` +
-            `Error Code: ${res.statusCode}`,
-          `error`,
-        );
-        break;
-    }
+    res.on(`data`, (data) => {
+      const responseBody = Buffer.from(data).toString();
+      switch (res.statusCode) {
+        case 200:
+          showToast(`${filename} has been deleted !`);
+          break;
+
+        default:
+          const jsonResponse = JSON.parse(responseBody);
+          // The SystemFileWatcher seems to fire several times
+          // for the same deleted file. The API-Sever  will however
+          // will respond with error status code 400 for deleting
+          // a file which was already deleted already.
+          // Server also responses with the msg prop No such file exists
+          // This way one knows this a duplicate delete.
+          // Only if it is some other error then we print out
+          // an error message to the user.
+          // This is a workaround !
+          if (jsonResponse.msg !== `No such file exists`)
+            showToast(
+              `Failed to delete ${filename} in the game ! \n` +
+                `The file may not exit in the game.\n` +
+                `Error Code: ${res.statusCode}`,
+              `error`,
+            );
+          break;
+      }
+    });
   });
 
   req.write(stringPayload);
