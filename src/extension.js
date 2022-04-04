@@ -4,6 +4,7 @@ const vscode = require(`vscode`);
 const fs = require(`fs`);
 const http = require(`http`);
 const { getFilesRecursively } = require(`./utils/fs`);
+const { openStdin } = require(`process`);
 
 // TODO: Move to extension config? Does this _need_ to be configurable?
 const BB_GAME_CONFIG = {
@@ -156,10 +157,28 @@ function activate(context) {
     }),
   );
 
-  // TODO: Not yet implemented delete within the game...
   disposableCommands.push(
     vscode.commands.registerCommand(`ext.bitburner-connector.deleteFile`, () => {
-      vscode.window.showInformationMessage(`Deleting files is not yet implemented...`);
+      if (!isAuthTokenSet()) {
+        showAuthError();
+        return;
+      }
+
+      const currentOpenFileURI = getCurrentOpenDocURI();
+
+      if (!isValidGameFile(currentOpenFileURI)) {
+        showToast(
+          `Can only push a file that is one of the following file types: ${BB_GAME_CONFIG.validFileExtensions.join(
+            `, `,
+          )}`,
+          `error`,
+        );
+        return;
+      }
+
+      const filename = stripWorkspaceFolderFromFileName(currentOpenFileURI);
+
+      doDeleteRequestToBBGame(filename);
     }),
   );
 
@@ -204,13 +223,10 @@ const initFileWatcher = (rootDir = `./`) => {
   });
 
   // TODO: Implement 'delete' endpoint in game
-  // fsWatcher.onDidDelete((event) => {
-  //   const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
-  //   uploadFilePostRequest({
-  //     action: `DELETE`,
-  //     filename: filename,
-  //   });
-  // });
+  fsWatcher.onDidDelete((event) => {
+    const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
+    doDeleteRequestToBBGame(filename);
+  });
 
   if (sanitizedUserConfig.showFileWatcherEnabledNotification) {
     showToast(
@@ -254,6 +270,79 @@ const stripWorkspaceFolderFromFileName = (filePath) => {
 const getCurrentOpenDocURI = () => vscode.window.activeTextEditor.document.uri.fsPath.toString();
 
 /**
+ * Makes sure the filename will be accepted by the api server of the game.
+ * @param {string} filename filename to prepare for the api server.
+ * @returns {string}
+ */
+const getPrepareFileName = (filename) => {
+  // If the file is going to be in a director, it NEEDS the leading `/`, i.e. `/my-dir/file.js`
+  // If the file is standalone, it CAN NOT HAVE a leading slash, i.e. `file.js`
+  // The game will not accept the file and/or have undefined behaviour otherwise...
+
+  filename = filename.replace(/[\\|/]+/g, `/`);
+
+  if (/\//.test(filename)) {
+    filename = `/${filename}`;
+  }
+
+  return filename;
+};
+
+/**
+ * @param {string} method
+ * @param {string} stringPayload
+ * @returns {object} options for a request.
+ */
+const buildOptions = (stringPayload, method) => ({
+  hostname: BB_GAME_CONFIG.url,
+  port: BB_GAME_CONFIG.port,
+  path: BB_GAME_CONFIG.filePostURI,
+  method: method,
+  headers: {
+    "Content-Type": `application/json`,
+    "Content-Length": stringPayload.length,
+    Authorization: `Bearer ${sanitizedUserConfig.authToken}`,
+  },
+});
+
+/**
+ * Makes a DELETE request to server for removing a file from the game.
+ * @param {string} filename
+ */
+const doDeleteRequestToBBGame = (filename) => {
+  const cleanFileName = getPrepareFileName(filename);
+  const stringPayload = JSON.stringify({ filename: cleanFileName });
+
+  const options = buildOptions(stringPayload, `DELETE`);
+
+  const req = http.request(options, (res) => {
+    // If the request for delete is not accepted by server
+    // then it will respond with the following body
+    // { "success": false, "msg": "No such file exists" }
+    // If the request is successful then the body looks like
+    // this { "success": true }
+    // So using response.on('msg') will not work so well.
+    // because it is not always there.
+    switch (res.statusCode) {
+      case 200:
+        showToast(`${filename} has been deleted !`);
+        break;
+      default:
+        showToast(
+          `Failed to delete ${filename} in the game ! \n` +
+            `The file may not exit in the game.\n` +
+            `Error Code: ${res.statusCode}`,
+          `error`,
+        );
+        break;
+    }
+  });
+
+  req.write(stringPayload);
+  req.end();
+};
+
+/**
  * Make a POST request to the expected port of the game
  * @param {{ action: `CREATE` | `UPDATE` | `UPSERT` | `DELETE`, filename: string, code?: string }} payload The payload to send to the game client
  */
@@ -262,25 +351,12 @@ const doPostRequestToBBGame = (payload) => {
   // If the file is standalone, it CAN NOT HAVE a leading slash, i.e. `file.js`
   // The game will not accept the file and/or have undefined behaviour otherwise...
   const cleanPayload = {
-    filename: `${payload.filename}`.replace(/[\\|/]+/g, `/`),
+    filename: getPrepareFileName(payload.filename),
     code: Buffer.from(payload.code).toString(`base64`),
   };
-  if (/\//.test(cleanPayload.filename)) {
-    cleanPayload.filename = `/${cleanPayload.filename}`;
-  }
 
   const stringPayload = JSON.stringify(cleanPayload);
-  const options = {
-    hostname: BB_GAME_CONFIG.url,
-    port: BB_GAME_CONFIG.port,
-    path: BB_GAME_CONFIG.filePostURI,
-    method: `POST`,
-    headers: {
-      "Content-Type": `application/json`,
-      "Content-Length": stringPayload.length,
-      Authorization: `Bearer ${sanitizedUserConfig.authToken}`,
-    },
-  };
+  const options = buildOptions(stringPayload, `POST`);
 
   const req = http.request(options, (res) => {
     res.on(`data`, (d) => {
