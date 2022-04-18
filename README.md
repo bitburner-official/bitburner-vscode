@@ -21,6 +21,8 @@ _This is an early WIP with a few hours gone in to both the extension and the gam
 | Show File Push Notifications | `bitburner.showPushSuccessNotification` | If true, this will show a notification/toast when a file has been successfully pushed to the game. Errors will always show. | `false` |
 | Show File Watcher Enabled Notifications | `bitburner.showFileWatcherEnabledNotification` | If true, this will show a notification/toast whenever the File Watcher is enabled and/or the extension configuration scriptRoot has changed. Errors will always show. | `false` |
 | Game Authentication Token | `bitburner.authToken` | The auth token that the game generates, needed for you to be able to push files in to your game client. See [#authentication](#authentication) section below. | (No Default) |
+| Game remote host | `bitburner.hostname` | Specify the host name of the game. | `localhost` |
+| Game remote port | `bitburner.port` | Specify the port of the game. | `9990` |
 
 ## Pushing Files
 
@@ -39,6 +41,10 @@ The token will ultimately end up in the workspace configuration (See your worksp
 - Add the token manually to the workspace `settings.json` to the key of `bitburner.authToken`.
 - Use the command palette (CTRL/CMD + SHIFT + P) and select `Bitburner: Add Auth Token`.
   - Paste the Auth Token copied via the games context menu in to the input box.
+
+#### Allow remote connections:
+
+By default, the game listens only on *localhost*. To allow connections from remote host or from a WSL container, you have to edit the `config.json` file and define the `host` parameter to `0.0.0.0`.
 
 ### Push through the context menu
 
