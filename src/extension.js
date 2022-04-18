@@ -22,7 +22,7 @@ let fwEnabled;
 
 // TODO: Refactor this user config to combined 'extension/user config' with better internal API/structure
 /**
- * @type {{ scriptRoot: string, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean, authToken: string }}
+ * @type {{ scriptRoot: string, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean, authToken: string, hostname: string, port: number }}
  */
 let sanitizedUserConfig;
 
@@ -271,8 +271,8 @@ const doPostRequestToBBGame = (payload) => {
 
   const stringPayload = JSON.stringify(cleanPayload);
   const options = {
-    hostname: BB_GAME_CONFIG.url,
-    port: BB_GAME_CONFIG.port,
+    hostname: sanitizedUserConfig.hostname,
+    port: sanitizedUserConfig.port,
     path: BB_GAME_CONFIG.filePostURI,
     method: `POST`,
     headers: {
@@ -333,6 +333,8 @@ const sanitizeUserConfig = () => {
       .get(`authToken`)
       .replace(/^bearer/i, ``)
       .trim(),
+    hostname: userConfig.get(`hostname`),
+    port: userConfig.get(`port`),
   };
 };
 
@@ -353,7 +355,7 @@ const showToast = (message, toastType = `information`, opts = { forceShow: false
   if (!Object.keys(ToastTypes).includes(toastType)) {
     return;
   }
-  if (!sanitizedUserConfig.showPushSuccessNotification && !opts.forceShow && toastType !== `error`) {
+  if ((!sanitizedUserConfig || !sanitizedUserConfig.showPushSuccessNotification) && !opts.forceShow && toastType !== `error`) {
     return;
   }
 
