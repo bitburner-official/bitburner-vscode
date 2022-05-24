@@ -30,7 +30,7 @@ When the game is started for the first time, it generates an 'Auth Token' that c
 
 You can copy the token from the Bitburner application 'API Server' context menu:
 
-![Image showing API Server context menu in the bitburner game client](https://raw.githubusercontent.com/hexnaught/vscode-bitburner-connector/assets/images/bit-burner-menu-auth-token.png)
+![Image showing API Server context menu in the bitburner game client](https://raw.githubusercontent.com/bitburner-official/bitburner-vscode/assets/images/bit-burner-menu-auth-token.png)
 
 #### Adding the token to the extension:
 
