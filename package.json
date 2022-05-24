@@ -14,10 +14,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hexnaught/vscode-bitburner-connector"
+    "url": "https://github.com/bitburner-official/bitburner-vscode"
   },
   "bugs": {
-    "url": "https://github.com/hexnaught/vscode-bitburner-connector/issues"
+    "url": "https://github.com/bitburner-official/bitburner-vscode/issues"
   },
   "contributors": [
     "Hexnaught <danj.parkes@gmail.com>"
