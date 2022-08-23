@@ -19,6 +19,10 @@ const BB_GAME_CONFIG = {
  */
 let fsWatcher;
 let fwEnabled;
+/**
+ * @type vscode.OutputChannel
+ */
+let outputChannel;
 
 // TODO: Refactor this user config to combined 'extension/user config' with better internal API/structure
 /**
@@ -300,6 +304,9 @@ const doPostRequestToBBGame = (payload) => {
     });
   });
 
+  req.on(`timeout`, () => showToast(`Connection to game timed out.`, `error`));
+  req.on(`error`, (err) => showToast(`Connection to game failed: ${err.message}`, `error`));
+
   req.write(stringPayload);
   req.end();
 };
@@ -356,6 +363,12 @@ const showToast = (message, toastType = `information`, opts = { forceShow: false
   if (!sanitizedUserConfig.showPushSuccessNotification && !opts.forceShow && toastType !== `error`) {
     return;
   }
+
+  if (!outputChannel) {
+    outputChannel = vscode.window.createOutputChannel(`Bitburner`);
+  }
+
+  outputChannel.appendLine(`[${toastType}]: ${message}`);
 
   ToastTypes[toastType](message);
 };
