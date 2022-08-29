@@ -12,6 +12,7 @@ const BB_GAME_CONFIG = {
   url: `localhost`,
   filePostURI: `/`,
   validFileExtensions: [`.js`, `.script`, `.ns`, `.txt`],
+  validJsExtensions: [`.js`, `.script`, `.ns`]
 };
 
 /**
@@ -22,7 +23,7 @@ let fwEnabled;
 
 // TODO: Refactor this user config to combined 'extension/user config' with better internal API/structure
 /**
- * @type {{ scriptRoot: string, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean, authToken: string }}
+ * @type {{ scriptRoot: string, replaceJsImportPaths: boolean, fwEnabled: boolean, showPushSuccessNotification: boolean, showFileWatcherEnabledNotification: boolean, authToken: string }}
  */
 let sanitizedUserConfig;
 
@@ -112,8 +113,10 @@ function activate(context) {
           return;
         }
 
-        const contents = fs.readFileSync(currentOpenFileURI).toString();
+        let contents = fs.readFileSync(currentOpenFileURI).toString();
         const filename = stripWorkspaceFolderFromFileName(currentOpenFileURI);
+
+        if (sanitizedUserConfig.replaceJsImportPaths && isJsFile(filename)) contents = replaceJsImportPathsForBB(filename, contents);
 
         doPostRequestToBBGame({
           action: `UPSERT`,
@@ -137,8 +140,9 @@ function activate(context) {
           .filter(isValidGameFile);
 
         const fileToContentMap = filesURIs.reduce((fileMap, fileURI) => {
-          const contents = fs.readFileSync(fileURI).toString();
+          let contents = fs.readFileSync(fileURI).toString();
           const filename = stripWorkspaceFolderFromFileName(fileURI.toString());
+          if (sanitizedUserConfig.replaceJsImportPaths && isJsFile(filename)) contents = replaceJsImportPathsForBB(filename, contents);
           fileMap.set(filename, contents);
           return fileMap;
         }, new Map());
@@ -182,8 +186,10 @@ const initFileWatcher = (rootDir = `./`) => {
   fsWatcher = vscode.workspace.createFileSystemWatcher(fullWatcherPathGlob);
 
   fsWatcher.onDidChange(async (event) => {
-    const contents = fs.readFileSync(event.fsPath.toString()).toString();
+    let contents = fs.readFileSync(event.fsPath.toString()).toString();
     const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
+
+    if (sanitizedUserConfig.replaceJsImportPaths && isJsFile(filename)) contents = replaceJsImportPathsForBB(filename, contents);
 
     doPostRequestToBBGame({
       action: `UPDATE`,
@@ -193,8 +199,10 @@ const initFileWatcher = (rootDir = `./`) => {
   });
 
   fsWatcher.onDidCreate((event) => {
-    const contents = fs.readFileSync(event.fsPath.toString()).toString();
+    let contents = fs.readFileSync(event.fsPath.toString()).toString();
     const filename = stripWorkspaceFolderFromFileName(event.fsPath.toString());
+
+    if (sanitizedUserConfig.replaceJsImportPaths && isJsFile(filename)) contents = replaceJsImportPathsForBB(filename, contents);
 
     doPostRequestToBBGame({
       action: `CREATE`,
@@ -252,6 +260,59 @@ const stripWorkspaceFolderFromFileName = (filePath) => {
  * @returns The file path of the currently open file
  */
 const getCurrentOpenDocURI = () => vscode.window.activeTextEditor.document.uri.fsPath.toString();
+
+/**
+ * Checks if a file is a javascript type by its extention
+ * @param {string} fileName
+ * @returns True if file extension is valid Javascript type (.js, .script, .ns)
+ */
+const isJsFile = (fileName) => {
+  return BB_GAME_CONFIG.validJsExtensions.some((ext) => fileName.endsWith(ext));
+};
+
+/**
+ * Replaces javascript import paths with the appropriate ones for Bitburner
+ * @param {string} fileName Prepared for BB filename
+ * @param {string} jsContent Script file content
+ * @returns Processed code
+ */
+const replaceJsImportPathsForBB = (fileName, jsContent) => {
+
+  let hierarchy = fileName.split('/');
+  if (hierarchy.length > 0) hierarchy.pop();
+
+  jsContent = jsContent.replace(/(import(?:[^]*?)(['"]))([^]*?)(\2(?:\s*);)/g, function (match, start, quote, path, end) {
+    return start + refactorJsImportPathForBB(path, hierarchy) + end;
+  });
+
+  return jsContent;
+
+};
+
+/**
+ * Converts javascript relative import path to BB file naming system
+ * @param {string} path Original javascript import path
+ * @param {string[]} hierarchy Script folder chain
+ * @returns Javascript import path suitable for BB
+ */
+ const refactorJsImportPathForBB = (path, hierarchy) => {
+
+  if (path.startsWith('/')) return path;
+
+  while (path.startsWith('./')) path = path.substring(2);
+
+  let bbHierarchyLength = hierarchy.length;
+  while (path.startsWith('../')) {
+    path = path.substring(3);
+    bbHierarchyLength--;
+  }
+
+  let bbHierarchy = '';
+  for (let i = 0; i < bbHierarchyLength; i++) bbHierarchy += hierarchy[i] + '/';
+
+  return '/' + bbHierarchy + path;
+
+};
 
 /**
  * Make a POST request to the expected port of the game
@@ -327,6 +388,7 @@ const sanitizeUserConfig = () => {
   sanitizedUserConfig = {
     scriptRoot: `${userConfig.get(`scriptRoot`)}/`.replace(/^\./, ``).replace(/\/*$/, `/`),
     fwEnabled: fwVal,
+    replaceJsImportPaths: userConfig.get(`replaceJsImportPaths`),
     showPushSuccessNotification: userConfig.get(`showPushSuccessNotification`),
     showFileWatcherEnabledNotification: userConfig.get(`showFileWatcherEnabledNotification`),
     authToken: userConfig

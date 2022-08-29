@@ -92,6 +92,11 @@
             "default": "./",
             "description": "The root directory of the scripts you want to push to the game. (Use with the File Watcher)"
           },
+          "bitburner.replaceJsImportPaths": {
+            "type": "boolean",
+            "default": false,
+            "description": "Convert javascript import paths when pushing scripts so './' and '../' can be used"
+          },
           "bitburner.fileWatcher.enable": {
             "type": "boolean",
             "default": false,
