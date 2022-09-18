@@ -281,7 +281,7 @@ const replaceJsImportPathsForBB = (fileName, jsContent) => {
   let hierarchy = fileName.split('/');
   if (hierarchy.length > 0) hierarchy.pop();
 
-  jsContent = jsContent.replace(/(import(?:[^]*?)(['"]))([^]*?)(\2(?:\s*);)/g, function (match, start, quote, path, end) {
+  jsContent = jsContent.replace(/(import(?:[^]*?)(['"]))([^]*?)(\2(?:\s*))/g, function (match, start, quote, path, end) {
     return start + refactorJsImportPathForBB(path, hierarchy) + end;
   });
 
